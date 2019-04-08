@@ -1,6 +1,0 @@
-[2019-03-20 17:56:17,784] {__main__:21} WARNING - This is a warning
-[2019-03-20 17:56:17,785] {__main__:22} INFO - This is a debug
-[2019-03-20 17:56:17,786] {__main__:23} ERROR - THis is an error
-[2019-03-20 17:56:17,786] {__main__:26} ERROR - This is an error after basic
-[2019-03-20 17:56:17,789] {other:4} WARNING - THis is a warning from other.
-[2019-03-20 17:56:17,795] {__main__:34} INFO - sub info
