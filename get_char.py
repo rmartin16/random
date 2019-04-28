@@ -1,6 +1,12 @@
 
 class _GetChar:
-    """Gets a single character from standard input.  Does not echo to the screen."""
+    """
+       Gets a single character from standard input. Does not echo to the screen.
+       Outcomes:
+         1. upon timeout -> None returned
+         2. upon UTF-8 entry -> UTF-8 char returned
+         3. upon non-UTF-8 entry -> best case is hex encoding...
+    """
     def __init__(self):
         from os import name as osname
         if osname == 'nt':
@@ -31,20 +37,14 @@ class _GetCharUnix:
 
         fd = stdin.fileno()
         old_settings = tcgetattr(fd)
+        ch = None
 
         try:
             setraw(stdin.fileno())
 
-            # [ Wait until ready for reading,
-            #   wait until ready for writing
-            #   wait for an "exception condition" ]
-            # The below line times out after 1 second
-            # This can be changed to a floating-point value if necessary
             [i, _, _] = select([stdin.fileno()], [], [], timeout)
             if i:
                 ch = stdin.read(1)
-            else:
-                ch = None
 
         finally:
             tcsetattr(fd, TCSADRAIN, old_settings)
@@ -53,24 +53,45 @@ class _GetCharUnix:
 
 
 class _GetCharWindows:
-    """Fetch a character using the Microsoft Visual C Runtime."""
+    """Fetch a character using the Microsoft Visual C Runtime.
+
+       NOTE: this windows implementation works but is finicky. I've mostly
+             peculiar behavoir around entering non-ASCII characters. For
+             instance, entering the up arrow key seems to leave something in
+             the buffer such that the next call may find something...FYI...
+
+    """
     def __init__(self):
         pass
 
     def __call__(self, timeout):
         from msvcrt import getch, kbhit
         from time import sleep
+        char = None
 
         # just block for input if no timeout
         if timeout is None:
-            return getch()
+            char = getch()
 
-        else:  # otherwise continuously check for input until timeout
-            for _ in range(0, timeout):
-                if kbhit():  # is input waiting?
-                    return getch()  # return that input
-                sleep(1)
-        return
+            # otherwise continuously check for input until timeout
+        else:
+            for _ in range(0, int(timeout)*2):
+                if kbhit():  # is any input waiting?
+                    char = getch()  # get it
+                    break
+                sleep(.5)
+
+        if char is None:
+            return char
+
+        # make a best effort to convert bytes to string to match unix.
+        #  first just attempt a straight UTF-8 conversion.
+        #  then attempt a non-UTF-8 conversion; since non-UTF-8 chars convert
+        # with a 'b' on the front and has quotes, trim that stuff.
+        try:
+            return char.decode()
+        except UnicodeDecodeError:
+            return str(char)[2:-1]
 
 
 get_char = _GetChar()
