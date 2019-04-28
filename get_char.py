@@ -7,7 +7,12 @@ class _GetChar:
         except ImportError:
             self.impl = _GetCharUnix()
 
-    def __call__(self, timeout): return self.impl(timeout)
+    def __call__(self, timeout=None):
+        ch = self.impl(timeout)
+        # catch CTRL+C
+        if ch == '\x03':
+            raise KeyboardInterrupt
+        return ch
 
 
 class _GetCharUnix:
