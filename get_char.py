@@ -9,7 +9,7 @@ class _GetChar:
 
     def __call__(self, timeout=None):
         ch = self.impl(timeout)
-        # catch CTRL+C
+        # catch CTRL+C (needed for non-windows)
         if ch == '\x03':
             raise KeyboardInterrupt
         return ch
@@ -57,15 +57,20 @@ class _GetCharWindows:
         import msvcrt
         import time
 
-        # Delay timeout to match UNIX behaviour
-        time.sleep(timeout)
-
-        # Check if there is a character waiting, otherwise this would block
-        if msvcrt.kbhit():
+        # just block for input if no timeout
+        if timeout is None:
             return msvcrt.getch()
 
-        else:
-            return
+        else:  # otherwise continuously check for input until timeout
+            try:
+                timeout = int(timeout)
+                for _ in range(0, timeout):
+                    if msvcrt.kbhit():  # is input waiting?
+                        return msvcrt.getch()  # return that input
+                    time.sleep(1)
+            except ValueError:
+                pass  # ensure timeout is an integer...
+        return
 
 
 get_char = _GetChar()
