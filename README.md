@@ -1,6 +1,6 @@
 # random
 
-fast_file_copy.py - fastest copy implemented in python I've found
+fast_file_copy.py - fastest file copy implemented in python I've found
 
 get_char.py - cross platform single char input with timeout
 
