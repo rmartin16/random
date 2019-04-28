@@ -56,7 +56,7 @@ class _GetCharWindows:
     """Fetch a character using the Microsoft Visual C Runtime.
 
        NOTE: this windows implementation works but is finicky. I've mostly
-             peculiar behavoir around entering non-ASCII characters. For
+             peculiar behavior around entering non-ASCII characters. For
              instance, entering the up arrow key seems to leave something in
              the buffer such that the next call may find something...FYI...
 
