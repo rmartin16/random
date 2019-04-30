@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import subprocess
 import psutil
@@ -7,7 +7,7 @@ import os
 import time
 from get_char import get_char
 
-timeout = 5 * 60  # X minutes
+timeout = 15 * 60  # X minutes
 
 
 class Timeout(Exception):
