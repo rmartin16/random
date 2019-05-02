@@ -43,8 +43,7 @@ def copy_file(src, dst, progress_bar=True):
             if progress_bar:
                 (loop_count, progress_count) = manage_progress_bar(expected_loop_count, loop_count, progress_count)
 
-    except OSError as e:
-        print(e)
+    except OSError:
         return_value = 1
     finally:
         for fd in [file_in, file_out]:
