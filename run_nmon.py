@@ -22,7 +22,7 @@ def run_with_input():
     proc = None
     all_commands = 'cmdrkhljnNtVvb0u.1345'
     top_process_commands = '1345'
-    user_commands = ['l', 'n', 'g', 't']
+    user_commands = ['l', 'n', 'g', 't', 'k', 'm']
     while True:
         try:
             start_time = time.time()
