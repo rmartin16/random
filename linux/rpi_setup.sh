@@ -80,8 +80,7 @@ sudo usermod -aG docker russell
 sudo apt-get install -y libffi-dev libssl-dev python3-dev python3 python3-pip
 python3 -m pip install docker-compose
 # set up regular clean ups
-printf "  0 3    *   *   *   /mnt/nas/Data/scripts/cleanup_docker.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/docker_cleanup.log" | sudo tee -a /etc/cron.d/cleanup_docker
-
+(crontab -l 2>/dev/null; echo "  0 3    *   *   *   /mnt/nas/Data/scripts/cleanup_docker.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/docker_cleanup.log") | sort - | uniq - | crontab -
 # set up backups
 mkdir -p ~/logs
-printf "  0 5    *   *   *   /mnt/nas/Data/scripts/backup_to_ds1515.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/backup_to_ds1515.log" | sudo tee -a /etc/cron.d/backup_to_ds1515
+(crontab -l 2>/dev/null; echo "  0 5    *   *   *   /mnt/nas/Data/scripts/backup_to_ds1515.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/backup_to_ds1515.log") | sort - | uniq - | crontab -
