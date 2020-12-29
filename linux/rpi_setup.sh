@@ -28,7 +28,8 @@ sudo apt update && sudo apt upgrade -y
 
 # set up ssh keys
 echo "Printing SSH key"
-if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen; fi && cat ~/.ssh/id_rsa.pub && read -n 1 -r -s -p $'\nAdd key to NAS and press enter to continue...\n'
+if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null; fi
+cat ~/.ssh/id_rsa.pub && read -n 1 -r -s -p $'\nAdd key to NAS and press enter to continue...\n'
 # allow connections to NAS
 echo "Adding NAS to known_hosts"
 ssh-keygen -R 10.16.8.1 && rm -rf ~/.ssh/known_hosts.old
