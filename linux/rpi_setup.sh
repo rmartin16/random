@@ -56,6 +56,8 @@ cd $SAVEPWD
 
 # set up ssh keys
 if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen; fi && cat ~/.ssh/id_rsa.pub && read -n 1 -r -s -p $'\nAdd key to NAS and press enter to continue...\n'
+# allow connections to NAS
+ssh-keyscan -H 10.16.8.1 >> ~/.ssh/known_hosts
 
 # set up NAS mounts
 sudo apt-get -y install sshfs
@@ -63,10 +65,6 @@ sudo mkdir -p /mnt/nas/Media
 sudo mkdir -p /mnt/nas/Data
 echo "russell@10.16.8.1:/Media  /mnt/nas/Media  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
 echo "russell@10.16.8.1:/Data  /mnt/nas/Data  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
-if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen; fi
-# NAS doesn't accept password SSH connections so need to manually add key
-cat ~/.ssh/id_rsa.pub && read -n 1 -r -s -p $'\nAdd key to NAS and press enter to continue...\n'
-# repeat for root user
 sudo mount -a
 
 # pyenv
