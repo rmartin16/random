@@ -50,7 +50,8 @@ sudo -- bash -c 'if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then bash ~/
 # set up prompt
 echo "Set up Bash prompt"
 curl -fsSL https://raw.githubusercontent.com/rmartin16/random/master/bash/.bash_prompt.sh -o ~/.bash_prompt
-if ! grep -F ". ~/.bash_prompt" ~/.bashrc 1>/dev/null 2>&1; then printf "\nif [ -f ~/.bash_prompt ]; then\n    . ~/.bash_prompt\nfi\n" | tee -a ~/.bashrc && source ~/.bash_prompt; fi
+if ! grep -F ". ~/.bash_prompt" ~/.bashrc 1>/dev/null 2>&1; then printf "\nif [ -f ~/.bash_prompt ]; then\n    . ~/.bash_prompt\nfi\n" | tee -a ~/.bashrc; fi
+source ~/.bash_prompt
 
 # set up automatic updates
 echo "Set up unattended upgrades"
