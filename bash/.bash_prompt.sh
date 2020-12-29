@@ -97,6 +97,14 @@ function set_bash_prompt () {
   PS1="
 ${debian_chroot:+($debian_chroot)}${PYTHON_VIRTUALENV}${GREEN}\u@\h${COLOR_NONE}:${YELLOW}\w${COLOR_NONE}${BRANCH}
 ${PROMPT_SYMBOL} "
+  # update title of terminal
+  case "$TERM" in
+  xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+  *)
+    ;;
+  esac
 }
 
 # Tell bash to execute this function just before displaying its prompt.
