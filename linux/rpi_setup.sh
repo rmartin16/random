@@ -71,8 +71,10 @@ echo "Set up NAS mounts"
 sudo apt-get -y install sshfs
 sudo mkdir -p /mnt/nas/Media
 sudo mkdir -p /mnt/nas/Data
+set +e
 echo "russell@10.16.8.1:/Media  /mnt/nas/Media  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
 echo "russell@10.16.8.1:/Data  /mnt/nas/Data  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
+set -e
 sudo mount -a
 
 # pyenv
