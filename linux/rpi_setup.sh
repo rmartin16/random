@@ -2,6 +2,8 @@
 
 set -e
 
+USERNAME=russell
+
 # change default pi password
 ## passwd
 
@@ -45,7 +47,7 @@ source ~/.bash_aliases
 echo "Set up vim"
 sudo apt install -y git vim
 if [ ! -d ~/.vim_runtime ]; then git clone --depth=1 https://github.com/amix/vimrc.git ~/.vim_runtime; fi
-if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then bash ~/.vim_runtime/install_awesome_vimrc.sh; else echo "ERROR: failed to set up vim"; fi
+if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then ~/.vim_runtime/install_awesome_vimrc.sh; else echo "ERROR: failed to set up vim"; fi
 sudo -- bash -c 'if [ ! -d ~/.vim_runtime ]; then git clone --depth=1 https://github.com/amix/vimrc.git ~/.vim_runtime; fi'
 sudo -- bash -c 'if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then bash ~/.vim_runtime/install_awesome_vimrc.sh; fi'
 
@@ -71,33 +73,57 @@ echo "Set up NAS mounts"
 sudo apt-get -y install sshfs
 sudo mkdir -p /mnt/nas/Media
 sudo mkdir -p /mnt/nas/Data
-set +e
-echo "russell@10.16.8.1:/Media  /mnt/nas/Media  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
-echo "russell@10.16.8.1:/Data  /mnt/nas/Data  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/russell/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
-set -e
+echo "russell@10.16.8.1:/Media  /mnt/nas/Media  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/$USERNAME/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
+echo "russell@10.16.8.1:/Data  /mnt/nas/Data  fuse.sshfs x-systemd.automount,transform_symlinks,port=5050,identityfile=/home/$USERNAME/.ssh/id_rsa,allow_other,uid=1001,gid=1001 0 0" | sudo tee -a /etc/fstab
 sudo mount -a
 
 # pyenv
 echo "Set up pyenv"
-if [ ! -d /home/russell/.pyenv ]; then curl https://pyenv.run | bash; fi
-if ! grep -F "/home/russell/.pyenv/bin" ~/.bashrc 1>/dev/null 2>&1; then printf '\nexport PATH="/home/russell/.pyenv/bin:$PATH"\neval "$(pyenv init -)"\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; fi
+if [ ! -d /home/$USERNAME/.pyenv ]; then curl https://pyenv.run | bash; else pyenv update; fi
+if ! grep -F "/home/$USERNAME/.pyenv/bin" ~/.bashrc 1>/dev/null 2>&1; then printf '\nexport PATH="/home/$USERNAME/.pyenv/bin:$PATH"\neval "$(pyenv init -)"\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; fi
 
 # install docker
 echo "Set up Docker"
 curl -fsSL https://get.docker.com | sudo bash
-sudo usermod -aG docker russell
+sudo usermod -aG docker $USERNAME
 sudo apt-get install -y libffi-dev libssl-dev python3-dev python3 python3-pip
 python3 -m pip install docker-compose
 
 echo "Add cron jobs"
 # set up regular docker clean ups
-(crontab -l 2>/dev/null; echo "  0 3    *   *   *   /mnt/nas/Data/scripts/cleanup_docker.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/docker_cleanup.log") | sort - | uniq - | crontab -
+(crontab -l 2>/dev/null; echo "  0 3    *   *   *   /mnt/nas/Data/scripts/cleanup_docker.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/$USERNAME/logs/docker_cleanup.log") | sort - | uniq - | crontab -
 # set up backups
 mkdir -p ~/logs
-(crontab -l 2>/dev/null; echo "  0 5    *   *   *   /mnt/nas/Data/scripts/backup_to_ds1515.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/russell/logs/backup_to_ds1515.log") | sort - | uniq - | crontab -
+(crontab -l 2>/dev/null; echo "  0 5    *   *   *   /mnt/nas/Data/scripts/backup_to_ds1515.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/$USERNAME/logs/backup_to_ds1515.log") | sort - | uniq - | crontab -
+
+echo "Set up log rotation"
+if ! grep -F backup_to_ds1515.log /etc/logrotate.d/mylogs 1>/dev/null 2>&1; then
+echo "/home/$USERNAME/logs/backup_to_ds1515.log {
+    su $USERNAME $USERNAME
+    size 10M
+    copytruncate
+    rotate 4
+    create 700 $USERNAME $USERNAME
+    maxage 30
+}
+" | sudo tee -a /etc/logrotate.d/mylogs
+fi
+
+if ! grep -F docker_cleanup.log /etc/logrotate.d/mylogs 1>/dev/null 2>&1; then
+echo "/home/$USERNAME/logs/docker_cleanup.log {
+    su $USERNAME $USERNAME
+    size 10M
+    copytruncate
+    rotate 4
+    create 700 $USERNAME $USERNAME
+    maxage 30
+}
+" | sudo tee -a /etc/logrotate.d/mylogs
+fi
 
 # manually install needrestart since debian ppa only provides v3.4 right now
 if ! needrestart --version | grep -F "needrestart 3.5" - 1>/dev/null 2>&1; then
+  echo "Install needrestart"
   SAVEPWD=$PWD
   mkdir -p ~/tmp
   cd ~/tmp
