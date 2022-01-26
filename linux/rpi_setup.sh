@@ -122,8 +122,9 @@ echo "/home/$USERNAME/logs/docker_cleanup.log {
 fi
 
 # manually install needrestart since debian ppa only provides v3.4 right now
+echo "Install needrestart"
+sudo apt install needrestart
 if ! needrestart --version | grep -F "needrestart 3.5" - 1>/dev/null 2>&1; then
-  echo "Install needrestart"
   SAVEPWD=$PWD
   mkdir -p ~/tmp
   cd ~/tmp
