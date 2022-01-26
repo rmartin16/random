@@ -13,9 +13,10 @@ USERNAME=russell
 ## echo "russell ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers.d/010_russell-nopasswd
 
 # ssh back in as russell for additional setup
+## sudo usermod -L pi # lock pi user
 
 # raspbian OS config
-## raspi-config
+## sudo raspi-config
 # change hostname
 # require network at boot
 # set GPU memory to 16
@@ -31,7 +32,7 @@ USERNAME=russell
 # restart pi
 
 # set up ssh keys
-echo "Printing SSH key"
+echo; echo ">>>>> Printing SSH key"
 if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y 2>&1 >/dev/null; fi
 cat ~/.ssh/id_rsa.pub
 read -n 1 -r -s -p $'\nAdd key to NAS and press enter to continue...\n' </dev/tty
@@ -41,12 +42,15 @@ ssh-keygen -R 10.16.8.1 && rm -rf ~/.ssh/known_hosts.old
 ssh-keyscan -H 10.16.8.1 >> ~/.ssh/known_hosts
 
 # bash aliases
-echo "Create Bash aliases"
-if [ ! -f ~/.bash_aliases ]; then printf "alias ls='ls -lh --color=auto'\nalias la='ls -A'\n\nalias dc='docker-compose'\n" | tee ~/.bash_aliases; fi
+echo; echo ">>>>> Create Bash aliases"
+if [ ! -f ~/.bash_aliases ]; then 
+    printf "alias ls='ls -lh --color=auto'\nalias la='ls -A'\n\nalias dc='docker-compose'\n" >> ~/.bash_aliases;
+    printf '\nfunction update ()\n{\n\techo "apt update..."\n\tsudo apt update\n\techo; echo "apt upgrade..."\n\tsudo apt upgrade\n\techo; echo "apt autoremove..."\n\tsudo apt autoremove\n\techo; echo "apt autoclean..."\n\tsudo apt autoclean\n}' >> ~/.bash_aliases;
+fi
 source ~/.bash_aliases
 
 # set up vim
-echo "Set up vim"
+echo; echo ">>>>> Set up vim"
 sudo apt install -y git vim
 if [ ! -d ~/.vim_runtime ]; then git clone --depth=1 https://github.com/amix/vimrc.git ~/.vim_runtime; fi
 if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then ~/.vim_runtime/install_awesome_vimrc.sh; else echo "ERROR: failed to set up vim"; fi
@@ -54,13 +58,13 @@ sudo -- bash -c 'if [ ! -d ~/.vim_runtime ]; then git clone --depth=1 https://gi
 sudo -- bash -c 'if [ -f ~/.vim_runtime/install_awesome_vimrc.sh ]; then bash ~/.vim_runtime/install_awesome_vimrc.sh; fi'
 
 # set up prompt
-echo "Set up Bash prompt"
+echo; echo ">>>>> Set up Bash prompt"
 curl -fsSL https://raw.githubusercontent.com/rmartin16/random/master/bash/.bash_prompt.sh -o ~/.bash_prompt
 if ! grep -F ". ~/.bash_prompt" ~/.bashrc 1>/dev/null 2>&1; then printf "\nif [ -f ~/.bash_prompt ]; then\n    . ~/.bash_prompt\nfi\n" | tee -a ~/.bashrc; fi
 source ~/.bash_prompt
 
 # set up automatic updates
-echo "Set up unattended upgrades"
+echo; echo ">>>>> Set up unattended upgrades"
 sudo apt-get install -y unattended-upgrades
 echo 'Unattended-Upgrade::Origins-Pattern {
 //      Fix missing Rasbian sources.
@@ -71,7 +75,7 @@ echo 'Unattended-Upgrade::Origins-Pattern {
 };' | sudo tee /etc/apt/apt.conf.d/51unattended-upgrades-raspbian
 
 # set up NAS mounts
-echo "Set up NAS mounts"
+echo; echo ">>>>> Set up NAS mounts"
 sudo apt-get -y install sshfs
 sudo mkdir -p /mnt/nas/Media
 sudo mkdir -p /mnt/nas/Data
@@ -80,10 +84,10 @@ echo "russell@10.16.8.1:/Data  /mnt/nas/Data  fuse.sshfs x-systemd.automount,tra
 sudo mount -a
 
 # pyenv
-echo "Set up pyenv"
+echo; echo ">>>>> Set up pyenv"
 if [ ! -d /home/$USERNAME/.pyenv ]; then curl https://pyenv.run | bash; else pyenv update; fi
 if ! grep -F "pyenv init" ~/.bashrc 1>/dev/null 2>&1; then 
-    printf '\neval "$(pyenv init -)\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; 
+    printf '\neval "$(pyenv init -)"\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; 
 fi
 if ! grep -F "pyenv init" ~/.profile 1>/dev/null 2>&1; then
 sed -Ei -e '/^([^#]|$)/ {a \
@@ -94,22 +98,24 @@ a \
 ' -e ':a' -e '$!{n;ba};}' ~/.profile;
 printf '\neval "$(pyenv init --path)"' >>~/.profile;
 fi
+source ~/.profile
 
 # install docker
-echo "Set up Docker"
+echo; echo ">>>>> Set up Docker"
 curl -fsSL https://get.docker.com | sudo bash
 sudo usermod -aG docker $USERNAME
 sudo apt-get install -y libffi-dev libssl-dev python3-dev python3 python3-pip
 python3 -m pip install docker-compose
+sudo usermod $USERNAME -a -G docker
 
-echo "Add cron jobs"
+echo; echo ">>>>> Add cron jobs"
 # set up regular docker clean ups
 (crontab -l 2>/dev/null; echo "  0 3    *   *   *   /mnt/nas/Data/scripts/cleanup_docker.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/$USERNAME/logs/docker_cleanup.log") | sort - | uniq - | crontab -
 # set up backups
 mkdir -p ~/logs
 (crontab -l 2>/dev/null; echo "  0 5    *   *   *   /mnt/nas/Data/scripts/backup_to_ds1515.sh 2>&1 | /mnt/nas/Data/scripts/datetime_output_to_logfile.sh >> /home/$USERNAME/logs/backup_to_ds1515.log") | sort - | uniq - | crontab -
 
-echo "Set up log rotation"
+echo; echo ">>>>> Set up log rotation"
 if ! grep -F backup_to_ds1515.log /etc/logrotate.d/mylogs 1>/dev/null 2>&1; then
 echo "/home/$USERNAME/logs/backup_to_ds1515.log {
     su $USERNAME $USERNAME
@@ -134,10 +140,11 @@ echo "/home/$USERNAME/logs/docker_cleanup.log {
 " | sudo tee -a /etc/logrotate.d/mylogs
 fi
 
-# manually install needrestart since debian ppa only provides v3.4 right now
-echo "Install needrestart"
-sudo apt install needrestart
+# install needrestart
+echo; echo ">>>>> Install needrestart"
+sudo apt install -y needrestart
 if ! needrestart --version | grep -F "needrestart 3.5" - 1>/dev/null 2>&1; then
+  # manually install needrestart since debian ppa may only provide v3.4 right now
   SAVEPWD=$PWD
   mkdir -p ~/tmp
   cd ~/tmp
