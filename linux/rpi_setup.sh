@@ -158,3 +158,7 @@ if ! needrestart --version | grep -F "needrestart 3.5" - 1>/dev/null 2>&1; then
   fi
   cd $SAVEPWD
 fi
+
+# install netdata
+echo; echo ">>>>> Install netdata"
+wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh
