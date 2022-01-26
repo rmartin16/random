@@ -26,7 +26,9 @@ USERNAME=russell
 # restart pi
 
 # update machine
-sudo apt update && sudo apt upgrade -y
+## sudo apt update && sudo apt upgrade -y
+
+# restart pi
 
 # set up ssh keys
 echo "Printing SSH key"
@@ -80,7 +82,18 @@ sudo mount -a
 # pyenv
 echo "Set up pyenv"
 if [ ! -d /home/$USERNAME/.pyenv ]; then curl https://pyenv.run | bash; else pyenv update; fi
-if ! grep -F "/home/$USERNAME/.pyenv/bin" ~/.bashrc 1>/dev/null 2>&1; then printf '\nexport PATH="/home/$USERNAME/.pyenv/bin:$PATH"\neval "$(pyenv init -)"\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; fi
+if ! grep -F "pyenv init" ~/.bashrc 1>/dev/null 2>&1; then 
+    printf '\neval "$(pyenv init -)\neval "$(pyenv virtualenv-init -)"\n' | tee -a ~/.bashrc; 
+fi
+if ! grep -F "pyenv init" ~/.profile 1>/dev/null 2>&1; then
+sed -Ei -e '/^([^#]|$)/ {a \
+export PYENV_ROOT="$HOME/.pyenv"
+a \
+export PATH="$PYENV_ROOT/bin:$PATH"
+a \
+' -e ':a' -e '$!{n;ba};}' ~/.profile;
+printf '\neval "$(pyenv init --path)"' >>~/.profile;
+fi
 
 # install docker
 echo "Set up Docker"
