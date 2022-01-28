@@ -158,7 +158,12 @@ if ! needrestart --version | grep -F "needrestart 3.5" - 1>/dev/null 2>&1; then
   fi
   cd $SAVEPWD
 fi
+# the whole reason we need v3.5...to stop false positive alerts about multiple kernels
+if ! grep -F "qr(kernel7l\.img)" /etc/needrestart/conf.d/kernel.conf 1>/dev/null 2>&1; then
+    printf "# Filter kernel image filenames by regex. This is required on Raspian having\n# multiple kernel image variants installed in parallel.\n\$nrconf{kernelfilter} = qr(kernel7l\.img);\n" | sudo tee -a /etc/needrestart/conf.d/kernel.conf
+fi
 
 # install netdata
 echo; echo ">>>>> Install netdata"
-wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh
+# their installer gets upset when run in the script...
+echo "wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh"
